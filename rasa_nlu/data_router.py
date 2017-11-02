@@ -235,3 +235,16 @@ class DataRouter(object):
         result.addErrback(training_errback)
 
         return result
+    def update_jieba_userdict(self, data, config_values):
+        import jieba
+        _config = self.config.as_dict()
+        for key, val in config_values.items():
+            _config[key] = val
+
+        dict_path = _config.get("user_dict_path")
+        data_file = os.path.join(dict_path, "user_dict.txt")
+        with io.open(data_file, 'w') as f:
+            f.write(data)
+        jieba.load_userdict(data_file)
+        logger.info("load user dict from file")
+        return "success"

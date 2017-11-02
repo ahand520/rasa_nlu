@@ -111,11 +111,20 @@ class RasaNLU(object):
         self.config = config
         self.data_router = self._create_data_router(config, component_builder)
         self._testing = testing
+        self._load_user_dict(config)
         reactor.suggestThreadPoolSize(config['num_threads'] * 5)
 
     def _create_data_router(self, config, component_builder):
         return DataRouter(config, component_builder)
 
+    def _load_user_dict(self, config):
+        user_dic_path = config["user_dict_path"]
+        if user_dic_path is not None:
+            import jieba
+            user_dic_file = os.path.join(user_dic_path, "user_dict.txt")
+            if os.path.isfile(user_dic_file):
+                jieba.load_userdict(user_dic_file)
+                logger.info("load user dict from file")
     @app.route("/", methods=['GET'])
     @check_cors
     def hello(self, request):
@@ -210,6 +219,27 @@ class RasaNLU(object):
             request.setResponseCode(500)
             returnValue(simplejson.dumps(
                     {"error": "{}".format(e)}))
+
+    @app.route("/dictionary", methods=['POST'])
+    @requires_auth
+    @check_cors
+    @inlineCallbacks
+    def set_dictionary(self, request):
+        data_string = request.content.read().decode('utf-8', 'strict')
+        kwargs = {key.decode('utf-8', 'strict'): value[0].decode('utf-8', 'strict')
+                  for key, value in request.args.items()}
+        request.setHeader('Content-Type', 'application/json')
+
+        try:
+            request.setResponseCode(200)
+            response = yield self.data_router.update_jieba_userdict(
+                data_string, kwargs)
+            returnValue(simplejson.dumps(
+                {'info': 'user dictionary saveed: {}'.format(response)}))
+        except Exception as e:
+            request.setResponseCode(500)
+            returnValue(simplejson.dumps(
+                {"error": "{}".format(e)}))
 
 
 if __name__ == '__main__':

@@ -3,5 +3,7 @@
   "language": "zh",
   "spacy_model_name": "zh_wiki",
   "path" : "./models",
-  "data" : "./data/examples/rasa/weather_nlu_data.json"
+  "data" : "./data/examples/rasa/weather_nlu_data.json",
+  "user_dict_path" : "./user_dict",
+  "cors_origins" : ["*"]
 }
