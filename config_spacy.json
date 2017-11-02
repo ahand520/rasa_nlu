@@ -1,0 +1,7 @@
+{
+  "pipeline": ["nlp_spacy", "tokenizer_spacy", "intent_entity_featurizer_regex", "intent_featurizer_spacy","intent_featurizer_tfidf", "ner_crf", "ner_synonyms",  "intent_classifier_sklearn"],
+  "language": "zh",
+  "spacy_model_name": "zh_wiki",
+  "path" : "./models",
+  "data" : "./data/examples/rasa/weather_nlu_data.json"
+}
