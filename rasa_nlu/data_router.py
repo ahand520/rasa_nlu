@@ -242,6 +242,8 @@ class DataRouter(object):
             _config[key] = val
 
         dict_path = _config.get("user_dict_path")
+        if not dict_path:
+            raise InvalidProjectError("Missing user_dict_path setting in config")
         data_file = os.path.join(dict_path, "user_dict.txt")
         with io.open(data_file, 'w') as f:
             f.write(data)

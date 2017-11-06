@@ -118,7 +118,7 @@ class RasaNLU(object):
         return DataRouter(config, component_builder)
 
     def _load_user_dict(self, config):
-        user_dic_path = config["user_dict_path"]
+        user_dic_path = config.get("user_dict_path")
         if user_dic_path is not None:
             import jieba
             user_dic_file = os.path.join(user_dic_path, "user_dict.txt")

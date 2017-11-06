@@ -94,8 +94,8 @@ class TfidfFeaturizer(Featurizer):
         import cloudpickle
 
         if model_dir and model_metadata.get("intent_featurizer_tfidf"):
-            classifier_file = os.path.join(model_dir, model_metadata.get("intent_featurizer_tfidf"))
-            with io.open(classifier_file, 'rb') as f:  # pragma: no test
+            tf_idf_file = os.path.join(model_dir, model_metadata.get("intent_featurizer_tfidf"))
+            with io.open(tf_idf_file, 'rb') as f:  # pragma: no test
                 if PY3:
                     return cloudpickle.load(f, encoding="latin-1")
                 else:
@@ -109,8 +109,8 @@ class TfidfFeaturizer(Featurizer):
 
         import cloudpickle
 
-        classifier_file = os.path.join(model_dir, "intent_featurizer_tfidf.pkl")
-        with io.open(classifier_file, 'wb') as f:
+        tf_idf_file = os.path.join(model_dir, "intent_featurizer_tfidf.pkl")
+        with io.open(tf_idf_file, 'wb') as f:
             cloudpickle.dump(self, f)
 
         return {
