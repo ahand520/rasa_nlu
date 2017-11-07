@@ -142,11 +142,17 @@ class DataRouter(object):
         elif mode.lower() == 'api':
             from rasa_nlu.emulators.dialogflow import DialogflowEmulator
             return DialogflowEmulator()
+        elif mode.lower() == 'domainswitch':
+            from rasa_nlu.emulators.domainswitch import DomainswitchEmulator
+            return DomainswitchEmulator()
         else:
             raise ValueError("unknown mode : {0}".format(mode))
 
     def extract(self, data):
         return self.emulator.normalise_request_json(data)
+
+    def extract_all(self, data):
+        return self.emulator.normalise_request_json(data, True)
 
     def parse(self, data):
         project = data.get("project") or RasaNLUConfig.DEFAULT_PROJECT_NAME
@@ -168,6 +174,32 @@ class DataRouter(object):
             self.responses.info('', user_input=response, project=project, model=used_model)
         return self.format_response(response)
 
+    def parse_all(self, data):
+        from operator import itemgetter
+        projects = data.get("project")
+        used_models = []
+        response_domain = []
+        for project in projects:
+            model = data.get("model")
+            if project not in self.project_store:
+                projects = self._list_projects(self.config['path'])
+                if project not in projects:
+                    raise InvalidProjectError("No project found with name '{}'.".format(project))
+                else:
+                    try:
+                        self.project_store[project] = Project(self.config, self.component_builder, project)
+                    except Exception as e:
+                        raise InvalidProjectError("Unable to load project '{}'. Error: {}".format(project, e))
+
+            response, used_model = self.project_store[project].parse(data['text'], data.get('time', None), model)
+            response["project"] = project
+            response_domain.append(response)
+            used_models.append(used_model)
+        response_domain.sort(key=lambda item:item['intent']['confidence'],reverse=True)
+        if self.responses:
+            self.responses.info('', user_input=response_domain, project=projects, model=used_models)
+        return self.format_response_all(response_domain)
+
     @staticmethod
     def _list_projects(path):
         """List the projects in the path, ignoring hidden directories."""
@@ -177,6 +209,9 @@ class DataRouter(object):
 
     def format_response(self, data):
         return self.emulator.normalise_response_json(data)
+
+    def format_response_all(self, data):
+        return self.emulator.normalise_response_json(data, True)
 
     def get_status(self):
         # This will only count the trainings started from this process, if run in multi worker mode, there might

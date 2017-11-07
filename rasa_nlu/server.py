@@ -166,6 +166,43 @@ class RasaNLU(object):
                 request.setResponseCode(500)
                 returnValue(simplejson.dumps({"error": "{}".format(e)}))
 
+    @app.route("/parseall", methods=['GET', 'POST'])
+    @requires_auth
+    @check_cors
+    @inlineCallbacks
+    def parse_get_all(self, request):
+        request.setHeader('Content-Type', 'application/json')
+        if request.method.decode('utf-8', 'strict') == 'GET':
+            request_params = {key.decode('utf-8', 'strict'): value[0].decode('utf-8', 'strict')
+                              for key, value in request.args.items()}
+        else:
+            request_params = simplejson.loads(
+                request.content.read().decode('utf-8', 'strict'))
+
+        if 'query' in request_params:
+            request_params['q'] = request_params.pop('query')
+
+        if 'q' not in request_params:
+            request.setResponseCode(404)
+            dumped = simplejson.dumps({
+                "error": "Invalid parse parameter specified"})
+            returnValue(dumped)
+        else:
+            try:
+                mode = self.config['emulate']
+                if not mode or mode.tolower()!="domainswitch":
+                    raise InvalidProjectError("emulate mode must be 'domainswitch'")
+                data = self.data_router.extract_all(request_params)
+                request.setResponseCode(200)
+                response = yield (self.data_router.parse_all(data) if self._testing
+                                  else threads.deferToThread(self.data_router.parse_all, data))
+                returnValue(simplejson.dumps(response))
+            except InvalidProjectError as e:
+                request.setResponseCode(404)
+                returnValue(simplejson.dumps({"error": "{}".format(e)}))
+            except Exception as e:
+                request.setResponseCode(500)
+                returnValue(simplejson.dumps({"error": "{}".format(e)}))
     @app.route("/version", methods=['GET'])
     @requires_auth
     @check_cors
@@ -220,7 +257,7 @@ class RasaNLU(object):
             returnValue(simplejson.dumps(
                     {"error": "{}".format(e)}))
 
-    @app.route("/dictionary", methods=['POST'])
+    @app.route("/setdict", methods=['POST'])
     @requires_auth
     @check_cors
     @inlineCallbacks
